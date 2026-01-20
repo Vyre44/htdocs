@@ -3,6 +3,26 @@
  */
 
 /**
+ * Toast bildirimi göster
+ */
+function showToast(message, type = "success") {
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  // Animasyon için biraz bekle
+  setTimeout(() => toast.classList.add("show"), 10);
+  
+  // 3 saniye sonra kaldır
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+/**
  * Resim yükleme işlemi
  */
 document.addEventListener("change", async (e) => {
@@ -34,12 +54,13 @@ document.addEventListener("change", async (e) => {
   const data = await res.json();
 
   if (!data.ok) {
-    alert(data.message || "Yükleme başarısız");
+    showToast(data.message || "Yükleme başarısız", "error");
     input.value = "";
     return;
   }
 
   // Başarılıysa listeyi yenile
   input.value = "";
+  showToast("Resim başarıyla yüklendi! ✓", "success");
   await loadTasks();
 });

@@ -40,8 +40,9 @@ if (!move_uploaded_file($file["tmp_name"], $targetPath)) {
 }
 
 // Veritabanına web yolunu kaydet
-$webPath = "uploads/" . $name;
-$stmt = $pdo->prepare("UPDATE tasks SET image_path = :p WHERE id = :id");
+$webPath = "todo/uploads/" . $name;
+$stmt = $pdo->prepare("UPDATE tasks SET image_path = :p WHERE id = :id");   
 $stmt->execute(["p" => $webPath, "id" => $id]);
 
 success(["image_path" => $webPath]);
+
