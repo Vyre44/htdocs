@@ -1,7 +1,5 @@
 <?php
-/**
- * api/delete.php - Task sil
- */
+// api/delete.php - Task sil
 
 $id = (int)($_POST["id"] ?? 0);
 
@@ -14,7 +12,7 @@ $stmt = $pdo->prepare("SELECT image_path FROM tasks WHERE id = :id");
 $stmt->execute(["id" => $id]);
 $task = $stmt->fetch();
 
-// Task'ı sil
+// Task'ı veritabanından sil
 $stmt = $pdo->prepare("DELETE FROM tasks WHERE id = :id");
 $stmt->execute(["id" => $id]);
 

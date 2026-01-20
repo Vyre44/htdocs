@@ -1,8 +1,7 @@
 <?php
-/**
- * api/list.php - Task listesini getir
- */
+// api/list.php - Task listesini getir
 
+// Tamamlanmamışlar önce, sıralı olarak getir
 $tasks = $pdo->query("
   SELECT * 
   FROM tasks 

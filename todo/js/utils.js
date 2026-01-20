@@ -1,10 +1,6 @@
-/**
- * utils.js - Genel yardımcı fonksiyonlar
- */
+// utils.js - Genel yardımcı fonksiyonlar
 
-/**
- * Toast bildirimi göster
- */
+// Toast bildirimi göster
 function showToast(message, type = "success") {
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;

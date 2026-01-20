@@ -1,15 +1,11 @@
-/**
- * tasks.js - Task CRUD işlemleri
- */
+// tasks.js - Task CRUD işlemleri
 
 // HTML elemanlara erişim
 const taskList = document.getElementById("taskList");
 const addForm = document.getElementById("addForm");
 const titleInput = document.getElementById("titleInput");
 
-/**
- * HTML karakterleri escape et
- */
+// HTML karakterleri escape et (XSS koruması)
 function escapeHtml(s) {
   return s.replace(/[&<>"']/g, m => ({
     '&': '&amp;',
@@ -20,9 +16,7 @@ function escapeHtml(s) {
   }[m]));
 }
 
-/**
- * Bir task için list item HTML'i oluştur
- */
+// Bir task için list item HTML'i oluştur
 function renderTask(t) {
   const li = document.createElement("li");
   li.dataset.id = t.id;
@@ -52,9 +46,7 @@ function renderTask(t) {
   return li;
 }
 
-/**
- * Tüm taskları yükle
- */
+// Tüm taskları yükle
 async function loadTasks() {
   const res = await fetch("crud.php?action=list");
   const data = await res.json();
@@ -67,13 +59,11 @@ async function loadTasks() {
   taskList.innerHTML = "";
   data.tasks.forEach(t => taskList.appendChild(renderTask(t)));
 
-  // Sürükleme-bırakma ve diğer işlevleri etkinleştir
+  // Sürükleme-bırakma işlevini etkinleştir
   enableDragAndDrop();
 }
 
-/**
- * Yeni task ekle
- */
+// Yeni task ekle
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = titleInput.value.trim();
@@ -82,7 +72,7 @@ addForm.addEventListener("submit", async (e) => {
   const fd = new FormData();
   fd.append("title", title);
 
-  const res = await fetch("api/upload.php?action=add", { method: "POST", body: fd });
+  const res = await fetch("crud.php?action=add", { method: "POST", body: fd });
   const data = await res.json();
 
   if (!data.ok) return showToast(data.message || "Ekleme basarisiz", "error");
@@ -91,9 +81,7 @@ addForm.addEventListener("submit", async (e) => {
   await loadTasks();
 });
 
-/**
- * Task tamamlandı/tamamlanmadı toggle et
- */
+// Task tamamlandı/tamamlanmadı toggle et
 document.addEventListener("change", async (e) => {
   if (!e.target.classList.contains("toggle-checkbox")) return;
 
@@ -124,9 +112,7 @@ document.addEventListener("change", async (e) => {
   enableDragAndDrop();
 });
 
-/**
- * Task sil
- */
+// Task sil
 document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("delete-link")) return;
   e.preventDefault();

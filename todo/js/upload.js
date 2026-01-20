@@ -1,10 +1,6 @@
-/**
- * upload.js - Dosya yükleme işlemleri
- */
+// upload.js - Dosya yükleme işlemleri
 
-/**
- * Resim yükleme işlemi
- */
+// Resim yükleme işlemi
 document.addEventListener("change", async (e) => {
   if (!e.target.classList.contains("img-input")) return;
 

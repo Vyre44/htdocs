@@ -1,7 +1,6 @@
 <?php
-
-//Gelen action'ı ilgili API dosyasına yönlendir
- 
+// crud.php - API Router
+// Gelen action'ı ilgili API dosyasına yönlendir
 
 require "db.php";
 require_once "api/helpers.php";

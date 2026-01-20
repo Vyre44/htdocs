@@ -1,10 +1,8 @@
-/**
- * dragdrop.js - Sürükleme-bırakma işlemleri
- */
+// dragdrop.js - Sürükleme-bırakma işlemleri
 
 let draggedLi = null;
 
-//Sürükleme-bırakma özelliğini etkinleştir
+// Sürükleme-bırakma özelliğini etkinleştir
 function enableDragAndDrop() {
   const items = taskList.querySelectorAll("li");
 

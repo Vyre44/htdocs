@@ -1,4 +1,5 @@
 <?php
+// api/upload.php - Resim yükle
 require __DIR__ . "/../db.php";
 require_once __DIR__ . "/helpers.php";
 
@@ -25,33 +26,35 @@ if ($file["error"] !== UPLOAD_ERR_OK) {
   error("Yükleme hatası: " . $file["error"]);
 }
 
-// 1MB limit
+// 1MB boyut limiti
 if ($file["size"] > 1024 * 1024) {
   error("Dosya 1MB üstü olamaz.");
 }
 
-// sadece JPEG (MIME)
+// MIME type kontrolü (sadece JPEG)
 $finfo = new finfo(FILEINFO_MIME_TYPE);
 $mime = $finfo->file($file["tmp_name"]);
 if ($mime !== "image/jpeg") {
   error("Sadece JPEG (JPG) kabul edilir.");
 }
 
-// uploads klasörü (todo/uploads)
+// uploads klasörünün gerçek yolu
 $uploadDir = realpath(__DIR__ . "/../uploads");
 if ($uploadDir === false) error("uploads klasörü bulunamadı.");
 
+// Benzersiz dosya adı oluştur
 $filename = "task_" . $id . "_" . time() . ".jpg";
 $target = $uploadDir . DIRECTORY_SEPARATOR . $filename;
 
+// Dosyayı kaydet
 if (!move_uploaded_file($file["tmp_name"], $target)) {
   error("Dosya kaydedilemedi.");
 }
 
-// Web path (dinamik)
+// Web yolu (dinamik)
 $webPath = "uploads/" . $filename;
 
-// DB update
+// Veritabanını güncelle
 $stmt = $pdo->prepare("UPDATE tasks SET image_path = :p WHERE id = :id");
 $stmt->execute(["p" => $webPath, "id" => $id]);
 

@@ -1,4 +1,5 @@
 <?php
+// Veritabanı bağlantısı
 $host = "localhost";
 $db = "todo_app";
 $user = "root";
