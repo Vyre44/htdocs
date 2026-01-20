@@ -3,26 +3,6 @@
  */
 
 /**
- * Toast bildirimi göster
- */
-function showToast(message, type = "success") {
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  
-  document.body.appendChild(toast);
-  
-  // Animasyon için biraz bekle
-  setTimeout(() => toast.classList.add("show"), 10);
-  
-  // 3 saniye sonra kaldır
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-/**
  * Resim yükleme işlemi
  */
 document.addEventListener("change", async (e) => {
@@ -35,12 +15,12 @@ document.addEventListener("change", async (e) => {
 
   // Client-side kontrol (asıl kontrol PHP tarafında yapılır)
   if (file.size > 1024 * 1024) {
-    alert("Dosya 1MB üstü olamaz.");
+    showToast("Dosya 1MB üstü olamaz.", "error");
     input.value = "";
     return;
   }
   if (file.type !== "image/jpeg") {
-    alert("Sadece JPEG (JPG) kabul edilir.");
+    showToast("Sadece JPEG (JPG) kabul edilir.", "error");
     input.value = "";
     return;
   }

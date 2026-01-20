@@ -1,17 +1,23 @@
 <?php
-/**
- * api/upload.php - Resim yükle
- */
+require __DIR__ . "/../db.php";
+require_once __DIR__ . "/helpers.php";
 
 $id = (int)($_POST["id"] ?? 0);
+if ($id <= 0) error("Geçersiz id");
 
-if ($id <= 0) {
-  error("Geçersiz id");
+// Eski fotoğrafı kontrol et ve sil
+$stmt = $pdo->prepare("SELECT image_path FROM tasks WHERE id = :id");
+$stmt->execute(["id" => $id]);
+$oldTask = $stmt->fetch();
+
+if ($oldTask && !empty($oldTask["image_path"])) {
+  $oldFile = __DIR__ . "/../" . $oldTask["image_path"];
+  if (file_exists($oldFile)) {
+    @unlink($oldFile); // Eski dosyayı sil
+  }
 }
 
-if (!isset($_FILES["image"])) {
-  error("Dosya gelmedi");
-}
+if (!isset($_FILES["image"])) error("Dosya gelmedi");
 
 $file = $_FILES["image"];
 
@@ -24,25 +30,29 @@ if ($file["size"] > 1024 * 1024) {
   error("Dosya 1MB üstü olamaz.");
 }
 
-// JPEG kontrolü
+// sadece JPEG (MIME)
 $finfo = new finfo(FILEINFO_MIME_TYPE);
 $mime = $finfo->file($file["tmp_name"]);
 if ($mime !== "image/jpeg") {
   error("Sadece JPEG (JPG) kabul edilir.");
 }
 
-// Benzersiz dosya adı oluştur
-$name = "task_" . $id . "_" . time() . ".jpg";
-$targetPath = $uploadDir . "/" . $name;
+// uploads klasörü (todo/uploads)
+$uploadDir = realpath(__DIR__ . "/../uploads");
+if ($uploadDir === false) error("uploads klasörü bulunamadı.");
 
-if (!move_uploaded_file($file["tmp_name"], $targetPath)) {
+$filename = "task_" . $id . "_" . time() . ".jpg";
+$target = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+
+if (!move_uploaded_file($file["tmp_name"], $target)) {
   error("Dosya kaydedilemedi.");
 }
 
-// Veritabanına web yolunu kaydet
-$webPath = "todo/uploads/" . $name;
-$stmt = $pdo->prepare("UPDATE tasks SET image_path = :p WHERE id = :id");   
+// Web path (dinamik)
+$webPath = "uploads/" . $filename;
+
+// DB update
+$stmt = $pdo->prepare("UPDATE tasks SET image_path = :p WHERE id = :id");
 $stmt->execute(["p" => $webPath, "id" => $id]);
 
 success(["image_path" => $webPath]);
-

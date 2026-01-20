@@ -20,6 +20,7 @@
   </div>
 
   <!-- JavaScript modüllerini yükle -->
+  <script src="js/utils.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/dragdrop.js"></script>
   <script src="js/upload.js"></script>

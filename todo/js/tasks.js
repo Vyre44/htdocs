@@ -29,7 +29,7 @@ function renderTask(t) {
   li.draggable = (t.is_done == 0);
 
   const imgHtml = (t.image_path && t.image_path.trim() !== "")
-    ? `<img src="${t.image_path}" class="thumb" alt="">`
+    ? `<img src="${escapeHtml(t.image_path)}" class="thumb" alt="">`
     : "";
 
   li.innerHTML = `
@@ -60,7 +60,7 @@ async function loadTasks() {
   const data = await res.json();
 
   if (!data.ok) {
-    alert(data.message || "Liste yuklenemedi");
+    showToast(data.message || "Liste yuklenemedi", "error");
     return;
   }
 
@@ -77,15 +77,15 @@ async function loadTasks() {
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = titleInput.value.trim();
-  if (!title) return alert("Görev boş olamaz");
+  if (!title) return showToast("Görev boş olamaz", "error");
 
   const fd = new FormData();
   fd.append("title", title);
 
-  const res = await fetch("crud.php?action=add", { method: "POST", body: fd });
+  const res = await fetch("api/upload.php?action=add", { method: "POST", body: fd });
   const data = await res.json();
 
-  if (!data.ok) return alert(data.message || "Ekleme basarisiz");
+  if (!data.ok) return showToast(data.message || "Ekleme basarisiz", "error");
 
   titleInput.value = "";
   await loadTasks();
@@ -114,7 +114,7 @@ document.addEventListener("change", async (e) => {
   if (!data.ok) {
     cb.checked = !cb.checked;
     li.querySelector(".task-title").classList.toggle("task-done", cb.checked);
-    alert(data.message || "Güncelleme basarisiz");
+    showToast(data.message || "Güncelleme basarisiz", "error");
     return;
   }
 
@@ -140,7 +140,8 @@ document.addEventListener("click", async (e) => {
   const res = await fetch("crud.php?action=delete", { method: "POST", body: fd });
   const data = await res.json();
 
-  if (!data.ok) return alert(data.message || "Silme basarisiz");
+  if (!data.ok) return showToast(data.message || "Silme basarisiz", "error");
 
   taskList.querySelector(`li[data-id="${id}"]`)?.remove();
+  showToast("Görev silindi! ✓", "success");
 });

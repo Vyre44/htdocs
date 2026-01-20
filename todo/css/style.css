@@ -99,11 +99,10 @@ a:hover {
   user-select: none;
 }
     
-/* Toast Notification */
+ /* Toast bildirim stilleri */
 .toast {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 20px;right: 20px;
   padding: 14px 20px;
   border-radius: 6px;
   font-size: 14px;

@@ -11,7 +11,7 @@ function enableDragAndDrop() {
   items.forEach(li => {
     const cb = li.querySelector(".toggle-checkbox");
     if (cb && cb.checked) return; // Tamamlananlar sürüklenemez
-    
+
     // Sürükleme başladı
     li.addEventListener("dragstart", () => {
       draggedLi = li;
@@ -39,9 +39,8 @@ function enableDragAndDrop() {
   });
 }
 
-/**
- * Yeni sırayı veritabanına kaydet
- */
+/* Yeni sırayı veritabanına kaydet */
+ 
 async function saveOrder() {
   const ids = [...taskList.querySelectorAll("li")]
     .filter(li => !li.querySelector(".toggle-checkbox")?.checked)
@@ -54,5 +53,5 @@ async function saveOrder() {
 
   const res = await fetch("crud.php?action=reorder", { method: "POST", body: fd });
   const data = await res.json();
-  if (!data.ok) alert(data.message || "Sıralama kaydedilemedi");
+  if (!data.ok) showToast(data.message || "Sıralama kaydedilemedi", "error");
 }
