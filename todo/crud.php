@@ -9,8 +9,8 @@ header("Content-Type: application/json; charset=utf-8");
 
 $action = $_GET["action"] ?? "";
 
-// Güvenlik: sadece alfanumerik karakterlere izin ver
-if (!preg_match('/^[a-z]+$/', $action)) {
+// Güvenlik: sadece küçük harf ve alt çizgi
+if (!preg_match('/^[a-z_]+$/', $action)) {
   error("Geçersiz action");
 }
 

@@ -33,14 +33,12 @@ function renderTask(t) {
     </div>
 
     <div class="actions">
-      <input type="checkbox" class="toggle-checkbox" data-id="${t.id}" ${t.is_done == 1 ? "checked" : ""}>
+      <input type="checkbox" class="toggle-checkbox" data-id="${t.id}">
 
       <label class="img-btn" title="JPEG yükle">
         <input type="file" class="img-input" data-id="${t.id}" accept="image/jpeg">
         📷
       </label>
-
-      <a href="#" class="delete-link" data-id="${t.id}">Sil</a>
     </div>
   `;
   return li;
@@ -81,53 +79,53 @@ addForm.addEventListener("submit", async (e) => {
   await loadTasks();
 });
 
-// Task tamamlandı/tamamlanmadı toggle et
-document.addEventListener("change", async (e) => {
+// Checkbox sadece seçim için (toplu silme)
+document.addEventListener("change", (e) => {
   if (!e.target.classList.contains("toggle-checkbox")) return;
+  const li = e.target.closest("li");
+  li.classList.toggle("selected", e.target.checked);
+});
 
-  const cb = e.target;
-  const id = cb.dataset.id;
-  const is_done = cb.checked ? 1 : 0;
+// Task'a tıklayınca tamamlandı durumunu değiştir
+taskList.addEventListener("click", async (e) => {
+  if (e.target.closest(".toggle-checkbox") || e.target.closest(".img-btn")) return;
+  const li = e.target.closest("li");
+  if (!li) return;
 
-  const li = cb.closest("li");
-  li.querySelector(".task-title").classList.toggle("task-done", cb.checked);
+  const titleEl = li.querySelector(".task-title");
+  const willBeDone = titleEl.classList.contains("task-done") ? 0 : 1;
+
+  titleEl.classList.toggle("task-done", willBeDone === 1);
+  li.draggable = (willBeDone === 0);
 
   const fd = new FormData();
-  fd.append("id", id);
-  fd.append("is_done", is_done);
+  fd.append("id", li.dataset.id);
+  fd.append("is_done", willBeDone);
 
   const res = await fetch("crud.php?action=toggle", { method: "POST", body: fd });
   const data = await res.json();
 
   if (!data.ok) {
-    cb.checked = !cb.checked;
-    li.querySelector(".task-title").classList.toggle("task-done", cb.checked);
+    // Geri al
+    titleEl.classList.toggle("task-done", willBeDone !== 1);
+    li.draggable = (willBeDone === 0 ? false : true);
     showToast(data.message || "Güncelleme basarisiz", "error");
     return;
   }
 
-  // Tamamlananları aşağıya al
-  if (cb.checked) taskList.appendChild(li);
-  else taskList.insertBefore(li, taskList.firstElementChild);
+  // Tamamlananları aşağıya al, işareti kaldırılanları işaretli olmayan sonuna al
+  if (willBeDone === 1) {
+    taskList.appendChild(li);
+  } else {
+    // İşaretli olmayan görevlerin sonunu bul
+    const lastUndone = [...taskList.children].reverse().find(child => {
+      return !child.querySelector(".task-title").classList.contains("task-done");
+    });
+    if (lastUndone) {
+      taskList.insertBefore(li, lastUndone.nextElementSibling);
+    } else {
+      taskList.insertBefore(li, taskList.firstElementChild);
+    }
+  }
   enableDragAndDrop();
-});
-
-// Task sil
-document.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("delete-link")) return;
-  e.preventDefault();
-
-  const id = e.target.dataset.id;
-  if (!confirm("Silinsin mi?")) return;
-
-  const fd = new FormData();
-  fd.append("id", id);
-
-  const res = await fetch("crud.php?action=delete", { method: "POST", body: fd });
-  const data = await res.json();
-
-  if (!data.ok) return showToast(data.message || "Silme basarisiz", "error");
-
-  taskList.querySelector(`li[data-id="${id}"]`)?.remove();
-  showToast("Görev silindi! ✓", "success");
 });

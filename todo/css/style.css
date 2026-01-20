@@ -10,6 +10,25 @@ body {
   border-radius: 10px;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.header-actions button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
 /* Ekleme formu */
 .add-form {
   display: flex;
@@ -97,6 +116,10 @@ a:hover {
 .img-btn {
   cursor: pointer;
   user-select: none;
+}
+
+.selected {
+  background-color: #f6f7fb;
 }
     
  /* Toast bildirim stilleri */

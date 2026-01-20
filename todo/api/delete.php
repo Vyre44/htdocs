@@ -1,27 +1,25 @@
 <?php
-// api/delete.php - Task sil
+// api/delete.php - Task sil (Çöp kutusuna taşı)
 
 $id = (int)($_POST["id"] ?? 0);
+if ($id <= 0) error("Geçersiz id");
 
-if ($id <= 0) {
-  error("Geçersiz id");
-}
-
-// Task'ın fotoğrafını kontrol et
-$stmt = $pdo->prepare("SELECT image_path FROM tasks WHERE id = :id");
+// Task'ı al
+$stmt = $pdo->prepare("SELECT id, title, image_path FROM tasks WHERE id = :id");
 $stmt->execute(["id" => $id]);
 $task = $stmt->fetch();
+if (!$task) error("Görev bulunamadı");
 
-// Task'ı veritabanından sil
-$stmt = $pdo->prepare("DELETE FROM tasks WHERE id = :id");
-$stmt->execute(["id" => $id]);
+// Çöpe ekle (resim silinmez)
+$stmtTrash = $pdo->prepare("INSERT INTO trash (task_id, title, image_path) VALUES (:task_id, :title, :image_path)");
+$stmtTrash->execute([
+  "task_id" => $task["id"],
+  "title" => $task["title"],
+  "image_path" => $task["image_path"] ?? null
+]);
 
-// Eğer fotoğraf varsa, fiziksel dosyayı da sil
-if ($task && !empty($task["image_path"])) {
-  $filePath = __DIR__ . "/../" . $task["image_path"];
-  if (file_exists($filePath)) {
-    @unlink($filePath); // @ ile sessizce sil (hata olsa da devam et)
-  }
-}
+// Orijinal task'ı sil
+$stmtDel = $pdo->prepare("DELETE FROM tasks WHERE id = :id");
+$stmtDel->execute(["id" => $id]);
 
 success(["id" => $id]);

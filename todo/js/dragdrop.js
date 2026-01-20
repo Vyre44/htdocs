@@ -7,8 +7,8 @@ function enableDragAndDrop() {
   const items = taskList.querySelectorAll("li");
 
   items.forEach(li => {
-    const cb = li.querySelector(".toggle-checkbox");
-    if (cb && cb.checked) return; // Tamamlananlar sürüklenemez
+    const done = li.querySelector(".task-title")?.classList.contains("task-done");
+    if (done) return; // Tamamlananlar sürüklenemez
 
     // Sürükleme başladı
     li.addEventListener("dragstart", () => {
@@ -28,6 +28,10 @@ function enableDragAndDrop() {
       e.preventDefault();
       if (!draggedLi || draggedLi === li) return;
 
+      // Tamamlananlar hedef olamasın
+      const targetDone = li.querySelector(".task-title")?.classList.contains("task-done");
+      if (targetDone) return;
+
       const rect = li.getBoundingClientRect();
       const isAfter = (e.clientY - rect.top) > (rect.height / 2);
 
@@ -41,7 +45,7 @@ function enableDragAndDrop() {
  
 async function saveOrder() {
   const ids = [...taskList.querySelectorAll("li")]
-    .filter(li => !li.querySelector(".toggle-checkbox")?.checked)
+    .filter(li => !li.querySelector(".task-title")?.classList.contains("task-done"))
     .map(li => li.dataset.id);
 
   if (ids.length === 0) return;
