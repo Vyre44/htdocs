@@ -1,0 +1,58 @@
+/**
+ * dragdrop.js - Sürükleme-bırakma işlemleri
+ */
+
+let draggedLi = null;
+
+//Sürükleme-bırakma özelliğini etkinleştir
+function enableDragAndDrop() {
+  const items = taskList.querySelectorAll("li");
+
+  items.forEach(li => {
+    const cb = li.querySelector(".toggle-checkbox");
+    if (cb && cb.checked) return; // Tamamlananlar sürüklenemez
+    
+    // Sürükleme başladı
+    li.addEventListener("dragstart", () => {
+      draggedLi = li;
+      li.style.opacity = "0.5";
+    });
+
+    // Sürükleme bitti
+    li.addEventListener("dragend", () => {
+      li.style.opacity = "1";
+      draggedLi = null;
+      saveOrder();
+    });
+
+    // Üzerine sürükleniyor
+    li.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (!draggedLi || draggedLi === li) return;
+
+      const rect = li.getBoundingClientRect();
+      const isAfter = (e.clientY - rect.top) > (rect.height / 2);
+
+      if (isAfter) li.after(draggedLi);
+      else li.before(draggedLi);
+    });
+  });
+}
+
+/**
+ * Yeni sırayı veritabanına kaydet
+ */
+async function saveOrder() {
+  const ids = [...taskList.querySelectorAll("li")]
+    .filter(li => !li.querySelector(".toggle-checkbox")?.checked)
+    .map(li => li.dataset.id);
+
+  if (ids.length === 0) return;
+
+  const fd = new FormData();
+  fd.append("order", ids.join(","));
+
+  const res = await fetch("crud.php?action=reorder", { method: "POST", body: fd });
+  const data = await res.json();
+  if (!data.ok) alert(data.message || "Sıralama kaydedilemedi");
+}
