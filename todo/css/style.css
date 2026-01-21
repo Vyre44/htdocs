@@ -63,6 +63,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: 12px;
 }
 
 /* Ekleme alanı stili ve odak (focus) halkası */

@@ -101,13 +101,10 @@ function renderTasks(tasks) {
     const status = isDone
       ? '<span class="badge bg-success">Tamamlandı</span>'
       : '<span class="badge bg-danger">Tamamlanmadı</span>';
-    const checkbox = `<input type="checkbox" class="form-check-input status-check ${isDone ? 'check-done' : 'check-open'}" disabled ${isDone ? 'checked' : ''}>`;
     tr.innerHTML = `
       <td>${t.id}</td>
       <td>
-        <div class="d-flex align-items-center gap-2">
-          ${checkbox}<span class="${isDone ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(t.title)}</span>
-        </div>
+        <span class="${isDone ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(t.title)}</span>
       </td>
       <td>${status}</td>
       <td>${t.created_at ?? ''}</td>

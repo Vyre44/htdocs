@@ -34,7 +34,6 @@ if ((int)$CURRENT_USER_ROLE !== 2) {
           <div class="card-header d-flex justify-content-between align-items-center">
             <div>
               <h5 class="mb-0">Kullanıcılar</h5>
-              <small class="text-muted">Role: 1=Kullanıcı, 2=Admin</small>
             </div>
             <span class="badge bg-primary" id="userCount">0 kullanıcı</span>
           </div>
