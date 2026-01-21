@@ -1,11 +1,15 @@
 <?php
 // api/trash_empty.php - Çöpü tamamen boşalt
+require_once __DIR__ . '/../auth.php';
 
-// Resim yollarını al
-$rows = $pdo->query("SELECT image_path FROM trash")->fetchAll();
+// Sadece kullanıcının çöpünden resim yollarını al
+$stmt = $pdo->prepare("SELECT image_path FROM trash WHERE user_id = :user_id");
+$stmt->execute(['user_id' => $CURRENT_USER_ID]);
+$rows = $stmt->fetchAll();
 
-// Tabloyu temizle
-$pdo->exec("TRUNCATE TABLE trash");
+// Kullanıcının çöpünü temizle
+$stmtDel = $pdo->prepare("DELETE FROM trash WHERE user_id = :user_id");
+$stmtDel->execute(['user_id' => $CURRENT_USER_ID]);
 
 // Dosyaları sil
 foreach ($rows as $row) {

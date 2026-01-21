@@ -3,17 +3,21 @@
 const clearDoneBtn = document.getElementById("clearDoneBtn");
 const clearAllBtn = document.getElementById("clearAllBtn");
 
+// Tamamlandı (üstü çizili) görevleri sil
 if (clearDoneBtn) {
   clearDoneBtn.addEventListener("click", async () => {
-    const checked = [...document.querySelectorAll(".toggle-checkbox:checked")];
-    if (checked.length === 0) {
-      showToast("Seçili görev yok", "error");
+    const doneLis = [...document.querySelectorAll("#taskList li .task-title.task-done")]
+      .map(el => el.closest('li'))
+      .filter(Boolean);
+
+    if (doneLis.length === 0) {
+      showToast("Tamamlanmış görev yok", "error");
       return;
     }
 
-    if (!confirm("Seçili görevler silinsin mi?")) return;
+    if (!confirm("Tamamlanmış görevler silinsin mi?")) return;
 
-    const ids = checked.map(cb => cb.dataset.id).join(",");
+    const ids = doneLis.map(li => li.dataset.id).join(",");
     const fd = new FormData();
     fd.append("ids", ids);
 
@@ -25,12 +29,13 @@ if (clearDoneBtn) {
       return;
     }
 
-    showToast(`Seçili görevler silindi (${data.deleted})`, "success");
+    showToast(`Tamamlanan görevler silindi (${data.deleted})`, "success");
     await loadTasks();
     await loadTrash();
   });
 }
 
+// Tüm görevleri sil
 if (clearAllBtn) {
   clearAllBtn.addEventListener("click", async () => {
     if (!confirm("Tüm görevler silinsin mi?")) return;

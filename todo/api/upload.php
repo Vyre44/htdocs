@@ -1,15 +1,18 @@
 <?php
 // api/upload.php - Resim yükle
+require_once __DIR__ . '/../auth.php';
 require __DIR__ . "/../db.php";
 require_once __DIR__ . "/helpers.php";
 
 $id = (int)($_POST["id"] ?? 0);
 if ($id <= 0) error("Geçersiz id");
 
-// Eski fotoğrafı kontrol et ve sil
-$stmt = $pdo->prepare("SELECT image_path FROM tasks WHERE id = :id");
-$stmt->execute(["id" => $id]);
+// Eski fotoğrafı kontrol et ve sil (sadece kullanıcının kendi taski)
+$stmt = $pdo->prepare("SELECT image_path FROM tasks WHERE id = :id AND user_id = :user_id");
+$stmt->execute(["id" => $id, "user_id" => $CURRENT_USER_ID]);
 $oldTask = $stmt->fetch();
+
+if (!$oldTask) error("Görev bulunamadı veya yetkiniz yok");
 
 if ($oldTask && !empty($oldTask["image_path"])) {
   $oldFile = __DIR__ . "/../" . $oldTask["image_path"];

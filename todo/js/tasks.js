@@ -26,18 +26,19 @@ function renderTask(t) {
     ? `<img src="${escapeHtml(t.image_path)}" class="thumb" alt="">`
     : "";
 
+  const isDone = Number(t.is_done) === 1;
+  const statusBtn = `<button class="status-btn ${isDone ? 'btn-done' : 'btn-open'}" data-id="${t.id}" data-done="${isDone ? 1 : 0}" type="button">${isDone ? 'Tamamlandı' : 'Tamamlanmamış'}</button>`;
   li.innerHTML = `
     <div class="left">
-      <span class="task-title ${t.is_done == 1 ? "task-done" : ""}">${escapeHtml(t.title)}</span>
+      ${statusBtn}
+      <span class="task-title ${isDone ? "task-done" : ""}">${escapeHtml(t.title)}</span>
       ${imgHtml}
     </div>
 
     <div class="actions">
-      <input type="checkbox" class="toggle-checkbox" data-id="${t.id}">
-
       <label class="img-btn" title="JPEG yükle">
         <input type="file" class="img-input" data-id="${t.id}" accept="image/jpeg">
-        📷
+        🖼️
       </label>
     </div>
   `;
@@ -79,24 +80,24 @@ addForm.addEventListener("submit", async (e) => {
   await loadTasks();
 });
 
-// Checkbox sadece seçim için (toplu silme)
-document.addEventListener("change", (e) => {
-  if (!e.target.classList.contains("toggle-checkbox")) return;
-  const li = e.target.closest("li");
-  li.classList.toggle("selected", e.target.checked);
-});
-
-// Task'a tıklayınca tamamlandı durumunu değiştir
+// Durum butonuna basarak tamamla/aç
 taskList.addEventListener("click", async (e) => {
-  if (e.target.closest(".toggle-checkbox") || e.target.closest(".img-btn")) return;
-  const li = e.target.closest("li");
+  const statusBtn = e.target.closest(".status-btn");
+  if (!statusBtn) return;
+  const li = statusBtn.closest("li");
   if (!li) return;
 
   const titleEl = li.querySelector(".task-title");
-  const willBeDone = titleEl.classList.contains("task-done") ? 0 : 1;
+  const currentlyDone = statusBtn.dataset.done === '1';
+  const willBeDone = currentlyDone ? 0 : 1;
 
+  // UI ön güncelleme
   titleEl.classList.toggle("task-done", willBeDone === 1);
   li.draggable = (willBeDone === 0);
+  statusBtn.dataset.done = String(willBeDone);
+  statusBtn.textContent = willBeDone === 1 ? "Tamamlandı" : "Tamamlanmamış";
+  statusBtn.classList.toggle('btn-done', willBeDone === 1);
+  statusBtn.classList.toggle('btn-open', willBeDone === 0);
 
   const fd = new FormData();
   fd.append("id", li.dataset.id);
@@ -107,24 +108,30 @@ taskList.addEventListener("click", async (e) => {
 
   if (!data.ok) {
     // Geri al
-    titleEl.classList.toggle("task-done", willBeDone !== 1);
-    li.draggable = (willBeDone === 0 ? false : true);
+    titleEl.classList.toggle("task-done", currentlyDone);
+    li.draggable = (currentlyDone ? false : true);
+    statusBtn.dataset.done = String(currentlyDone ? 1 : 0);
+    statusBtn.textContent = currentlyDone ? "Tamamlandı" : "Tamamlanmamış";
+    statusBtn.classList.toggle('btn-done', currentlyDone);
+    statusBtn.classList.toggle('btn-open', !currentlyDone);
     showToast(data.message || "Güncelleme basarisiz", "error");
     return;
   }
 
-  // Tamamlananları aşağıya al, işareti kaldırılanları işaretli olmayan sonuna al
+  // Tamamlananları aşağıya al, tamamlanmamışları üstte tut
   if (willBeDone === 1) {
+    // Tamamlandı: en sona taşı
     taskList.appendChild(li);
   } else {
-    // İşaretli olmayan görevlerin sonunu bul
-    const lastUndone = [...taskList.children].reverse().find(child => {
-      return !child.querySelector(".task-title").classList.contains("task-done");
+    // Tamamlanmamış: ilk tamamlanmış görevin öncesine ekle (tamamlanmamışların en altına)
+    const firstDone = [...taskList.children].find(child => {
+      return child.querySelector(".task-title").classList.contains("task-done");
     });
-    if (lastUndone) {
-      taskList.insertBefore(li, lastUndone.nextElementSibling);
+    if (firstDone) {
+      taskList.insertBefore(li, firstDone);
     } else {
-      taskList.insertBefore(li, taskList.firstElementChild);
+      // Hiç tamamlanmış görev yoksa, en sona ekle
+      taskList.appendChild(li);
     }
   }
   enableDragAndDrop();

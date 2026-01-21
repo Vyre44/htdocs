@@ -1,5 +1,6 @@
 <?php
 // api/reorder.php - Task sırasını kaydet
+require_once __DIR__ . '/../auth.php';
 
 $orderRaw = $_POST["order"] ?? "";
 
@@ -17,11 +18,12 @@ if (count($ids) === 0) {
 // Transaction başlat
 $pdo->beginTransaction();
 try {
-  $stmt = $pdo->prepare("UPDATE tasks SET sort_order = :ord WHERE id = :id");
+  // Sadece kullanıcının kendi tasklerini güncelle
+  $stmt = $pdo->prepare("UPDATE tasks SET sort_order = :ord WHERE id = :id AND user_id = :user_id");
   $ord = 1;
   // Her task için yeni sırayı kaydet
   foreach ($ids as $oneId) {
-    $stmt->execute(["ord" => $ord, "id" => $oneId]);
+    $stmt->execute(["ord" => $ord, "id" => $oneId, "user_id" => $CURRENT_USER_ID]);
     $ord++;
   }
   $pdo->commit();
