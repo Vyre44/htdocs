@@ -1,0 +1,187 @@
+/* Admin Panel Stilleri */
+
+/* Toast bildirimleri */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 14px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 9999;
+  max-width: 320px;
+  word-wrap: break-word;
+  color: #fff;
+}
+
+.toast.show { 
+  opacity: 1; 
+  transform: translateY(0); 
+}
+
+.toast-success { 
+  background-color: #4caf50; 
+}
+
+.toast-error { 
+  background-color: #f44336; 
+}
+
+/* Rol badge */
+.role-badge { 
+  font-size: 12px; 
+}
+
+/* Durum checkbox'ları */
+.status-check { 
+  width: 18px; 
+  height: 18px; 
+  cursor: default; 
+}
+
+.status-check.check-done { 
+  border-color: #4caf50; 
+  background-color: #4caf50; 
+}
+
+/* Tab stilleri */
+.nav-tabs {
+  border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+  color: #6c757d;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #0d6efd;
+  border-bottom-color: #0d6efd;
+}
+
+.nav-tabs .nav-link.active {
+  color: #0d6efd;
+  background-color: transparent;
+  border-bottom-color: #0d6efd;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link .badge {
+  font-size: 0.75rem;
+}
+
+/* Çöp kutusu tablosu */
+#trashTable tbody tr:hover {
+  background-color: rgba(248, 249, 250, 0.8);
+}
+
+#trashTable .btn-outline-success:hover {
+  background-color: #198754;
+  color: white;
+}
+
+#trashTable .btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-check.check-open { 
+  border-color: #f44336; 
+  background-color: #fff; 
+}
+
+/* Tablo görünüm düzeltmesi */
+#tasksTable tbody tr { 
+  vertical-align: middle; 
+}
+
+#tasksTable td { 
+  padding: 12px 8px; 
+}
+
+/* Logout Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.3s;
+}
+
+.modal.show { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+
+@keyframes fadeIn { 
+  from { opacity: 0; } 
+  to { opacity: 1; } 
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  max-width: 400px;
+  text-align: center;
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp { 
+  from { 
+    transform: translateY(30px); 
+    opacity: 0; 
+  } 
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  } 
+}
+
+.modal-buttons { 
+  display: flex; 
+  gap: 10px; 
+  justify-content: center; 
+  margin-top: 20px; 
+}
+
+.modal-buttons button { 
+  padding: 10px 25px; 
+  border: none; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-size: 14px; 
+  font-weight: 600; 
+  transition: all 0.2s; 
+}
+
+.btn-confirm { 
+  background-color: #f44336; 
+  color: white; 
+}
+
+.btn-confirm:hover { 
+  background-color: #d32f2f; 
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4); 
+}
+
+.btn-cancel { 
+  background-color: #e0e0e0; 
+  color: #333; 
+}
+
+.btn-cancel:hover { 
+  background-color: #bdbdbd; 
+}

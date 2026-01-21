@@ -5,9 +5,17 @@ require_once __DIR__ . '/../auth.php';
 $id = (int)($_POST['id'] ?? 0);
 if ($id <= 0) error('Geçersiz id');
 
-// Çöpteki kayıt (sadece kullanıcının kendi çöpü)
+// Admin belirli kullanıcının çöpünden kalıcı silebilir
+$requestedUserId = (int)($_POST['user_id'] ?? 0);
+$targetUserId = $CURRENT_USER_ID;
+
+if ((int)$CURRENT_USER_ROLE === 2 && $requestedUserId > 0) {
+  $targetUserId = $requestedUserId;
+}
+
+// Çöpteki kaydı kontrol et
 $stmt = $pdo->prepare("SELECT * FROM trash WHERE id = :id AND user_id = :user_id");
-$stmt->execute(["id" => $id, "user_id" => $CURRENT_USER_ID]);
+$stmt->execute(["id" => $id, "user_id" => $targetUserId]);
 $row = $stmt->fetch();
 if (!$row) error('Kayıt bulunamadı veya yetkiniz yok');
 
