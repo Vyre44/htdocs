@@ -16,7 +16,8 @@ function escapeHtml(s) {
   }[m]));
 }
 
-// Bir task için list item HTML'i oluştur
+// Bir task için list item HTML'i oluştur - görev başlığı, resim, durum butonu
+// Tamamlananlar sürüklenemez (draggable false olur)
 function renderTask(t) {
   const li = document.createElement("li");
   li.dataset.id = t.id;
@@ -45,7 +46,8 @@ function renderTask(t) {
   return li;
 }
 
-// Tüm taskları yükle
+// Tüm taskları API'den getir ve sayfada göster
+// Sürükleme-bırakma özelliğini de etkinleştir
 async function loadTasks() {
   const res = await fetch("crud.php?action=list");
   const data = await res.json();
@@ -62,7 +64,8 @@ async function loadTasks() {
   enableDragAndDrop();
 }
 
-// Yeni task ekle
+// Yeni task ekle: form gönderildiğinde API'ye istek yap ve listeyi yenile
+// Boş görev veya whitespace-only görevler gönderilmez
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = titleInput.value.trim();
@@ -80,7 +83,9 @@ addForm.addEventListener("submit", async (e) => {
   await loadTasks();
 });
 
-// Durum butonuna basarak tamamla/aç
+// Durum butonuna basarak tamamla/aç işlemi: optimistic update + sunucu onayı
+// UI hemen güncellenecek, sunucu hatası varsa geri alınacak
+// Tamamlanan görevler sonda, tamamlanmayan görevler üstte konumlandırılır
 taskList.addEventListener("click", async (e) => {
   const statusBtn = e.target.closest(".status-btn");
   if (!statusBtn) return;
@@ -91,7 +96,7 @@ taskList.addEventListener("click", async (e) => {
   const currentlyDone = statusBtn.dataset.done === '1';
   const willBeDone = currentlyDone ? 0 : 1;
 
-  // UI ön güncelleme
+  // UI ön güncelleme (optimistic update) - sunucuyu beklemeden doğru göster
   titleEl.classList.toggle("task-done", willBeDone === 1);
   li.draggable = (willBeDone === 0);
   statusBtn.dataset.done = String(willBeDone);
@@ -119,6 +124,7 @@ taskList.addEventListener("click", async (e) => {
   }
 
   // Tamamlananları aşağıya al, tamamlanmamışları üstte tut
+  // Sıralama kuralı: Tamamlanmış görevler en sonda, tamamlanmamış görevler başında
   if (willBeDone === 1) {
     // Tamamlandı: en sona taşı
     taskList.appendChild(li);

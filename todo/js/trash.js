@@ -1,9 +1,11 @@
 // trash.js - Çöp kutusu işlemleri
+// Silinen görevleri görüntüle, geri yükle, kalıcı sil
 const trashBox = document.getElementById('trashBox');
 const trashList = document.getElementById('trashList');
 const toggleTrashBtn = document.getElementById('toggleTrashBtn');
 const emptyTrashBtn = document.getElementById('emptyTrashBtn');
 
+// Çöp kutusundan silinen tüm görevleri yükle ve göster
 async function loadTrash(){
   if(!trashList) return;
   const res = await fetch('crud.php?action=trash_list');
@@ -31,6 +33,7 @@ async function loadTrash(){
   });
 }
 
+// Çöp kutusu görünürlüğünü aç/kapat butonu
 if(toggleTrashBtn){
   toggleTrashBtn.addEventListener('click', async ()=>{
     const visible = trashBox.style.display !== 'none';
@@ -39,6 +42,7 @@ if(toggleTrashBtn){
   });
 }
 
+// Çöp kutusunu tamamen boşalt: trash_empty API'sini çağır
 if(emptyTrashBtn){
   emptyTrashBtn.addEventListener('click', async ()=>{
     if(!confirm('Çöp tamamen boşaltılsın mı?')) return;
@@ -53,7 +57,8 @@ if(emptyTrashBtn){
   });
 }
 
-// Restore handler
+// Çöpten görev geri yükle: trash_restore API'sini çağır
+// Geri yüklenen görev aktif listeye döner
 document.addEventListener('click', async (e)=>{
   if(!e.target.classList.contains('restore-btn')) return;
   const id = e.target.dataset.id;

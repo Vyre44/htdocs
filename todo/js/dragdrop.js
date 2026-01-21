@@ -1,8 +1,10 @@
 // dragdrop.js - Sürükleme-bırakma işlemleri
 
+// Genel değişken: şu anda sürüklenen list item
 let draggedLi = null;
 
 // Sürükleme-bırakma özelliğini etkinleştir
+// Tamamlanan görevler (task-done sınıfı olanlar) sürüklenemez
 function enableDragAndDrop() {
   const items = taskList.querySelectorAll("li");
 
@@ -41,8 +43,9 @@ function enableDragAndDrop() {
   });
 }
 
-/* Yeni sırayı veritabanına kaydet */
- 
+/* Yeni sırayı veritabanına kaydet
+   Tamamlanmamış görevlerin yalnız sırası kaydedilir
+   Tamamlananlar her zaman sonda olur */
 async function saveOrder() {
   const ids = [...taskList.querySelectorAll("li")]
     .filter(li => !li.querySelector(".task-title")?.classList.contains("task-done"))

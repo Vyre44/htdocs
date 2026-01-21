@@ -3,7 +3,8 @@
 const clearDoneBtn = document.getElementById("clearDoneBtn");
 const clearAllBtn = document.getElementById("clearAllBtn");
 
-// Tamamlandı (üstü çizili) görevleri sil
+// Tamamlandı (üstü çizili) görevleri sil: bulk_delete API'sini çağır
+// Silme işleminden önce onay mesajı gösterilir
 if (clearDoneBtn) {
   clearDoneBtn.addEventListener("click", async () => {
     const doneLis = [...document.querySelectorAll("#taskList li .task-title.task-done")]
@@ -35,7 +36,8 @@ if (clearDoneBtn) {
   });
 }
 
-// Tüm görevleri sil
+// Tüm görevleri sil: clear_all API'sini çağır
+// Silme işleminden önce onay mesajı gösterilir
 if (clearAllBtn) {
   clearAllBtn.addEventListener("click", async () => {
     if (!confirm("Tüm görevler silinsin mi?")) return;

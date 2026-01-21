@@ -1,11 +1,13 @@
 // admin.js - Admin paneli işlemleri
 
-let usersData = [];
-let selectedUserId = null;
-let trashData = [];
-const addTaskBtn = document.getElementById('addTaskBtn');
-const newTaskTitle = document.getElementById('newTaskTitle');
+// Admin paneli veri depolama
+let usersData = [];           // Tüm kullanıcılar listesi
+let selectedUserId = null;    // Şu anda seçili kullanıcı ID'si
+let trashData = [];           // Seçili kullanıcının çöp kutusu verileri
+const addTaskBtn = document.getElementById('addTaskBtn');       // Ekle butonu
+const newTaskTitle = document.getElementById('newTaskTitle');   // Görev başlığı input'u
 
+// Role'e göre badge (rozet) oluştur - Admin=kırmızı, Kullanıcı=yeşil
 function roleBadge(role) {
   const r = Number(role) || 1;
   const label = r >= 2 ? 'Admin' : 'Kullanıcı';
@@ -13,7 +15,7 @@ function roleBadge(role) {
   return `<span class="badge ${cls} role-badge">${label}</span>`;
 }
 
-// Kullanıcıları getir
+// API'den tüm kullanıcıları getir ve tabloyu oluştur
 async function fetchUsers() {
   try {
     const res = await fetch('crud.php?action=admin_users');
@@ -30,6 +32,7 @@ async function fetchUsers() {
   }
 }
 
+// Kullanıcı tablosunu HTML ile oluştur ve buton eventlerini bağla
 function renderUsers() {
   const tbody = document.querySelector('#usersTable tbody');
   tbody.innerHTML = '';
@@ -62,6 +65,7 @@ function renderUsers() {
   });
 }
 
+// Kullanıcı seç: başlıkları güncelle ve görevler/çöp kutusunu yükle
 async function selectUser(userId, username) {
   selectedUserId = userId;
   document.getElementById('tasksTitle').textContent = `Görevler - ${username}`;
@@ -70,7 +74,7 @@ async function selectUser(userId, username) {
   await fetchTrash(userId);
 }
 
-// Seçili kullanıcının görevlerini getir
+// Seçili kullanıcının görevlerini API'den getir
 async function fetchTasks(userId) {
   try {
     const fd = new FormData();
@@ -85,6 +89,7 @@ async function fetchTasks(userId) {
   }
 }
 
+// Görev tablosunu HTML ile oluştur, durum/silme butonlarına event bağla
 function renderTasks(tasks) {
   const tbody = document.querySelector('#tasksTable tbody');
   tbody.innerHTML = '';
@@ -134,7 +139,7 @@ function renderTasks(tasks) {
   });
 }
 
-// Admin: yeni görev ekle
+// Admin: seçili kullanıcı için yeni görev ekle
 async function adminAddTask() {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const title = (newTaskTitle?.value || '').trim();
@@ -158,7 +163,7 @@ async function adminAddTask() {
   }
 }
 
-// Admin: görev durum değiştir
+// Admin: görevin tamamlanma durumunu değiştir (aç/kapat)
 async function adminToggleTask(taskId, isDone) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
@@ -177,7 +182,7 @@ async function adminToggleTask(taskId, isDone) {
   }
 }
 
-// Admin: görev sil
+// Admin: görev sil (çöp kutusuna taşı) ve listeleri güncelle
 async function adminDeleteTask(taskId) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
@@ -198,7 +203,7 @@ async function adminDeleteTask(taskId) {
   }
 }
 
-// Çöp kutusunu getir
+// Seçili kullanıcının çöp kutusundaki silinen görevleri getir
 async function fetchTrash(userId) {
   if (!userId) userId = selectedUserId;
   if (!userId) return;
@@ -217,6 +222,7 @@ async function fetchTrash(userId) {
   }
 }
 
+// Çöp kutusu tablosunu HTML ile oluştur, geri yükleme/kalıcı silme butonları ekle
 function renderTrash() {
   const tbody = document.querySelector('#trashTable tbody');
   tbody.innerHTML = '';
@@ -270,7 +276,7 @@ function renderTrash() {
   });
 }
 
-// Çöpten geri yükle
+// Çöp kutusundan görev geri yükle (aktif görev listesine döndür)
 async function adminRestoreTask(trashId) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
@@ -291,7 +297,7 @@ async function adminRestoreTask(trashId) {
   }
 }
 
-// Çöpten kalıcı sil
+// Çöp kutusundan görev tamamen sil (dosya + veritabanı)
 async function adminPermanentDeleteTask(trashId) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
@@ -310,7 +316,8 @@ async function adminPermanentDeleteTask(trashId) {
   }
 }
 
-// Basit XSS koruması
+// HTML içeriğini güvenli hale getir (XSS saldırılarını önle)
+// Özel karakterleri HTML entity'lerine dönüştür
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -321,7 +328,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// Sayfa yüklenince başlat
+// Sayfa yüklenince: kullanıcıları getir, buton eventlerini ve tab eventlerini bağla
 window.addEventListener('DOMContentLoaded', () => {
   fetchUsers();
 
@@ -332,7 +339,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Çöp kutusu boşalt butonu
+  // Çöp kutusu boşalt: tüm çöpü temizle (onay ile)
   const emptyTrashBtn = document.getElementById('emptyTrashBtn');
   if (emptyTrashBtn) {
     emptyTrashBtn.addEventListener('click', async () => {

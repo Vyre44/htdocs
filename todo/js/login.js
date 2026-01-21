@@ -1,10 +1,12 @@
 // Login formu - Gerçek zamanlı validasyon ve farklı hata mesajlarıyla giriş kontrolü
+// Username/email ve şifre alanları blur ve input event'lerinde kontrol edilir
 
 const loginForm = document.getElementById('loginForm');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 
 // Input'a hata mesajı ve kırmızı border ekle
+// inputId + '_error' id'sine sahip element'e mesaj yazılır
 function showError(inputId, message) {
   const errorElement = document.getElementById(inputId + '_error');
   const inputElement = document.getElementById(inputId);
@@ -56,14 +58,16 @@ function validatePassword() {
   return true;
 }
 
-// Gerçek zamanlı kontrol: blur ve input event'lerinde validasyon çalışır
+// Gerçek zamanlı kontrol: blur (çıkış) ve input (yazma) event'lerinde validasyon çalışır
+// Kullanıcı bilgi girdikçe hemen kontrol yapılır
 usernameInput.addEventListener('blur', validateUsername);
 usernameInput.addEventListener('input', validateUsername);
 
 passwordInput.addEventListener('blur', validatePassword);
 passwordInput.addEventListener('input', validatePassword);
 
-// Form gönderildiğinde API'ye istek at
+// Form gönderildiğinde API'ye authenticate isteği at
+// Başarı durumunda role'a göre admin.php veya index.php'ye yönlendir
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 

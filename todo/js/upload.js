@@ -1,6 +1,7 @@
 // upload.js - Dosya yükleme işlemleri
 
-// Resim yükleme işlemi
+// Resim yükleme işlemi: input change event'inde tetiklenir
+// JPEG dosyalarını kontrol eder, sunucuya gönderir
 document.addEventListener("change", async (e) => {
   if (!e.target.classList.contains("img-input")) return;
 
