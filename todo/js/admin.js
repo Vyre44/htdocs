@@ -1,9 +1,10 @@
 // admin.js - Admin paneli işlemleri
 
 // Admin paneli veri depolama
+// Status mapping: 0=Çöp Kutusunda, 1=Başlanmadı, 2=Devam, 3=Tamamlandı, 4=Kalıcı Silinen
 let usersData = [];           // Tüm kullanıcılar listesi
 let selectedUserId = null;    // Şu anda seçili kullanıcı ID'si
-let trashData = [];           // Seçili kullanıcının çöp kutusu verileri
+let trashData = [];           // Seçili kullanıcının kalıcı silinenler verileri (status=4)
 const addTaskBtn = document.getElementById('addTaskBtn');       // Ekle butonu
 const newTaskTitle = document.getElementById('newTaskTitle');   // Görev başlığı input'u
 const userSelect = document.getElementById('userSelect');       // Kullanıcı dropdown (tasks.php)
@@ -106,7 +107,7 @@ async function fetchTasks(userId) {
   try {
     const fd = new FormData();
     fd.append('user_id', userId);
-    const res = await fetch('../crud.php?action=admin_user_tasks', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=admin_user_tasks', { method: 'POST', body: fd }); // Kullanıcı görevlerini çek
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Görevler alınamadı');
     const allTasks = data.tasks || [];
@@ -122,7 +123,7 @@ async function fetchTasks(userId) {
 
 // Görev tablosunu HTML ile oluştur, durum/silme butonlarına event bağla
 function renderTasks(tasks) {
-  const tbody = document.querySelector('#tasksTable tbody');
+  const tbody = document.querySelector('#tasksTable tbody'); // Aktif ve çöp (0-3) statülü görevler
   tbody.innerHTML = '';
   document.getElementById('taskCount').textContent = `${tasks.length} görev`;
 
@@ -283,7 +284,7 @@ async function fetchTrash(userId) {
 
 // Çöp kutusu tablosunu HTML ile oluştur, geri yükleme/kalıcı silme butonları ekle
 function renderTrash() {
-  const tbody = document.querySelector('#trashTable tbody');
+  const tbody = document.querySelector('#trashTable tbody'); // status=4 Kalıcı Silinenler tablosu
   tbody.innerHTML = '';
   document.getElementById('trashCount').textContent = trashData.length;
 

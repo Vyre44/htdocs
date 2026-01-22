@@ -40,7 +40,7 @@ function enableDragAndDrop() {
         return;
       }
 
-      // Çöp kutusuna bırakıldıysa delete API (status=4)
+      // Çöp kutusuna bırakıldıysa delete API (status=0)
       if (newStatus === '0') {
         isProcessing = true;
         const id = li.dataset.id;

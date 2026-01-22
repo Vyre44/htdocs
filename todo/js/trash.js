@@ -77,7 +77,7 @@ document.addEventListener('dragend', async (e) => {
   const data = await res.json();
   
   if(!data.ok){
-    showToast(data2.message || 'Status güncellenemedi', 'error');
+    showToast(data.message || 'Status güncellenemedi', 'error');
   } else {
     showToast('Görev geri alındı', 'success');
   }
