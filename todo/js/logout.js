@@ -49,7 +49,9 @@ class LogoutManager {
   // Çıkış işlemi yap
   async logout() {
     try {
-      const res = await fetch('crud.php?action=logout', { method: 'POST' });
+      // Admin klasöründense ../, değilse direkt logout.php
+      const logoutPath = window.location.pathname.includes('/admin/') ? '../logout.php' : 'logout.php';
+      const res = await fetch(logoutPath, { method: 'POST' });
       const text = await res.text();
 
       let data;
@@ -63,8 +65,10 @@ class LogoutManager {
 
       if (data.ok) {
         showToast('Çıkış yapılıyor...', 'success');
+        // Admin klasöründense ../, değilse direkt login.php
+        const loginPath = window.location.pathname.includes('/admin/') ? '../login.php' : 'login.php';
         setTimeout(() => {
-          window.location.href = 'login.php';
+          window.location.href = loginPath;
         }, 500);
       } else {
         showToast(data.message || 'Çıkış hatası', 'error');

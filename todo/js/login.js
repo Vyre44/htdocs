@@ -115,7 +115,7 @@ loginForm.addEventListener('submit', async (e) => {
     showToast('Giriş başarılı, yönlendiriliyorsunuz...', 'success');
     setTimeout(() => {
       if (data.role && Number(data.role) >= 2) {
-        window.location.href = 'admin.php';
+        window.location.href = 'admin/index.php';
       } else {
         window.location.href = 'index.php';
       }

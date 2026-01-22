@@ -6,6 +6,7 @@ let selectedUserId = null;    // Şu anda seçili kullanıcı ID'si
 let trashData = [];           // Seçili kullanıcının çöp kutusu verileri
 const addTaskBtn = document.getElementById('addTaskBtn');       // Ekle butonu
 const newTaskTitle = document.getElementById('newTaskTitle');   // Görev başlığı input'u
+const userSelect = document.getElementById('userSelect');       // Kullanıcı dropdown (tasks.php)
 
 // Role'e göre badge (rozet) oluştur - Admin=kırmızı, Kullanıcı=yeşil
 function roleBadge(role) {
@@ -18,13 +19,19 @@ function roleBadge(role) {
 // API'den tüm kullanıcıları getir ve tabloyu oluştur
 async function fetchUsers() {
   try {
-    const res = await fetch('crud.php?action=admin_users');
+    const res = await fetch('../crud.php?action=admin_users');
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Kullanıcılar alınamadı');
     usersData = data.users || [];
     renderUsers();
-    if (usersData.length > 0) {
-      selectUser(usersData[0].id, usersData[0].username);
+    populateUserSelect(usersData);
+
+    // URL'den user_id geldiyse onu seç, yoksa ilk kullanıcıyı seç
+    const initialId = getQueryParam('user_id');
+    const initialUser = initialId ? usersData.find((u) => Number(u.id) === Number(initialId)) : usersData[0];
+    if (initialUser) {
+      selectUser(initialUser.id, initialUser.username);
+      if (userSelect) userSelect.value = initialUser.id;
     }
   } catch (err) {
     console.error(err);
@@ -35,8 +42,10 @@ async function fetchUsers() {
 // Kullanıcı tablosunu HTML ile oluştur ve buton eventlerini bağla
 function renderUsers() {
   const tbody = document.querySelector('#usersTable tbody');
+  if (!tbody) return; // Kullanıcılar sayfası dışındaysak tablo yok
   tbody.innerHTML = '';
-  document.getElementById('userCount').textContent = `${usersData.length} kullanıcı`;
+  const userCountEl = document.getElementById('userCount');
+  if (userCountEl) userCountEl.textContent = `${usersData.length} kullanıcı`;
 
   usersData.forEach((u) => {
     const tr = document.createElement('tr');
@@ -65,6 +74,24 @@ function renderUsers() {
   });
 }
 
+// Dropdown'u doldur ve change event'i bağla (tasks.php sayfası için)
+function populateUserSelect(list) {
+  if (!userSelect) return;
+  userSelect.innerHTML = '<option value="">-- Kullanıcı Seç --</option>';
+  list.forEach((u) => {
+    const opt = document.createElement('option');
+    opt.value = u.id;
+    opt.textContent = u.username;
+    userSelect.appendChild(opt);
+  });
+
+  userSelect.addEventListener('change', () => {
+    const uid = Number(userSelect.value);
+    const u = usersData.find((x) => Number(x.id) === uid);
+    if (u) selectUser(u.id, u.username);
+  });
+}
+
 // Kullanıcı seç: başlıkları güncelle ve görevler/çöp kutusunu yükle
 async function selectUser(userId, username) {
   selectedUserId = userId;
@@ -79,7 +106,7 @@ async function fetchTasks(userId) {
   try {
     const fd = new FormData();
     fd.append('user_id', userId);
-    const res = await fetch('crud.php?action=admin_user_tasks', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=admin_user_tasks', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Görevler alınamadı');
     renderTasks(data.tasks || []);
@@ -147,7 +174,7 @@ async function adminAddTask() {
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('crud.php?action=add', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=add', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Görev eklenemedi');
     newTaskTitle.value = '';
@@ -169,7 +196,7 @@ async function adminToggleTask(taskId, isDone) {
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('crud.php?action=toggle', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=toggle', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Güncelleme başarısız');
     await fetchTasks(selectedUserId);
@@ -187,7 +214,7 @@ async function adminDeleteTask(taskId) {
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('crud.php?action=delete', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=delete', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Silme başarısız');
     await fetchTasks(selectedUserId);
@@ -208,7 +235,7 @@ async function fetchTrash(userId) {
   try {
     const fd = new FormData();
     fd.append('user_id', userId);
-    const res = await fetch('crud.php?action=trash_list', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=trash_list', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Çöp kutusu alınamadı');
     trashData = data.items || [];
@@ -281,7 +308,7 @@ async function adminRestoreTask(trashId) {
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('crud.php?action=trash_restore', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=trash_restore', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Geri yükleme başarısız');
     await fetchTasks(selectedUserId);
@@ -302,7 +329,7 @@ async function adminPermanentDeleteTask(trashId) {
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('crud.php?action=trash_delete', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=trash_delete', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Kalıcı silme başarısız');
     await fetchTrash(selectedUserId);
@@ -323,6 +350,12 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// URL parametresi oku (tasks.php'de user_id başlangıç seçimi için)
+function getQueryParam(key) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(key);
 }
 
 // Sayfa yüklenince: kullanıcıları getir, buton eventlerini ve tab eventlerini bağla
@@ -346,7 +379,7 @@ window.addEventListener('DOMContentLoaded', () => {
       try {
         const fd = new FormData();
         fd.append('user_id', selectedUserId);
-        const res = await fetch('crud.php?action=trash_empty', { method: 'POST', body: fd });
+        const res = await fetch('../crud.php?action=trash_empty', { method: 'POST', body: fd });
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || 'Çöp kutusu boşaltılamadı');
         await fetchTrash(selectedUserId);

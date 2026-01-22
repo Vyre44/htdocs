@@ -1,0 +1,113 @@
+<?php
+require_once 'admin_auth.php';
+?>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Görevler - Admin Paneli</title>
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Admin CSS -->
+  <link rel="stylesheet" href="../css/admin.css?v=<?php echo time(); ?>">
+</head>
+<body class="bg-light">
+  <!-- Navbar -->
+  <?php require_once 'layout/navbar.php'; ?>
+  
+  <!-- Sidebar -->
+  <?php require_once 'layout/sidebar.php'; ?>
+
+  <!-- Ana İçerik -->
+  <main class="main-content">
+    <div class="container-fluid">
+      <div class="row g-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <ul class="nav nav-tabs card-header-tabs" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
+                    <i class="fa-solid fa-list-check"></i> Görevler
+                    <span class="badge bg-secondary ms-1" id="taskCount">0</span>
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="trash-tab" data-bs-toggle="tab" data-bs-target="#trash" type="button" role="tab">
+                    <i class="fa-solid fa-trash"></i> Çöp Kutusu
+                    <span class="badge bg-danger ms-1" id="trashCount">0</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="card-body">
+              <div class="tab-content" id="adminTabContent">
+                <!-- Görevler Sekmesi -->
+                <div class="tab-pane fade show active" id="tasks" role="tabpanel">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0" id="tasksTitle">Görevler</h5>
+                  </div>
+                  <div class="d-flex gap-2 mb-3">
+                    <select id="userSelect" class="form-select" style="max-width: 250px;">
+                      <option value="">-- Kullanıcı Seç --</option>
+                    </select>
+                    <input type="text" id="newTaskTitle" class="form-control" placeholder="Yeni görev yaz..." />
+                    <button id="addTaskBtn" class="btn btn-success">Ekle</button>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-hover" id="tasksTable">
+                      <thead class="table-light">
+                        <tr>
+                          <th>ID</th>
+                          <th>Başlık</th>
+                          <th>Durum</th>
+                          <th>Oluşturulma</th>
+                          <th>İşlem</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Çöp Kutusu Sekmesi -->
+                <div class="tab-pane fade" id="trash" role="tabpanel">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0" id="trashTitle">Çöp Kutusu</h5>
+                    <button id="emptyTrashBtn" class="btn btn-danger btn-sm" style="display: none;">
+                      <i class="fa-solid fa-trash-can"></i> Tümünü Temizle
+                    </button>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-hover" id="trashTable">
+                      <thead class="table-light">
+                        <tr>
+                          <th>ID</th>
+                          <th>Başlık</th>
+                          <th>Silinme Tarihi</th>
+                          <th>İşlem</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scriptler -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"></script>
+  <script src="../js/utils.js?v=<?php echo time(); ?>"></script>
+  <script src="../js/logout.js?v=<?php echo time(); ?>"></script>
+  <script src="../js/admin.js?v=<?php echo time(); ?>"></script>
+</body>
+</html>

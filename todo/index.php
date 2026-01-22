@@ -1,5 +1,5 @@
 <?php require_once 'auth.php'; ?>
-<?php if ((int)$CURRENT_USER_ROLE === 2) { header('Location: admin.php'); exit; } ?>
+<?php if ((int)$CURRENT_USER_ROLE === 2) { header('Location: admin/index.php'); exit; } ?> <!--Admin kontrolü -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
