@@ -11,7 +11,8 @@ if ($userId <= 0) {
   error('Geçersiz kullanıcı');
 }
 
-$stmt = $pdo->prepare("SELECT id, title, is_done, created_at FROM tasks WHERE user_id = :uid ORDER BY id DESC");
+// 3 durumlu status alanını da döndür (0=Başlanmadı,1=Devam Ediyor,2=Tamamlandı)
+$stmt = $pdo->prepare("SELECT id, title, status, created_at FROM tasks WHERE user_id = :uid ORDER BY status ASC, id DESC");
 $stmt->execute(['uid' => $userId]);
 $tasks = $stmt->fetchAll();
 

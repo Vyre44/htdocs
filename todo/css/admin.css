@@ -98,6 +98,15 @@ body.sidebar-collapsed .sidebar .nav-link {
   border-bottom: 2px solid #dee2e6;
 }
 
+/* Admin status dropdown */
+.admin-status {
+  max-width: 140px !important;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.875rem !important;
+  height: auto !important;
+  min-height: 24px !important;
+}
+
 .nav-tabs .nav-link {
   color: #6c757d;
   border: none;

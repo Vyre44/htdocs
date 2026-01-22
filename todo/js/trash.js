@@ -1,23 +1,25 @@
-// trash.js - Çöp kutusu işlemleri
-// Silinen görevleri görüntüle, geri yükle, kalıcı sil
-const trashBox = document.getElementById('trashBox');
-const trashList = document.getElementById('trashList');
-const toggleTrashBtn = document.getElementById('toggleTrashBtn');
-const emptyTrashBtn = document.getElementById('emptyTrashBtn');
+// trash.js - Çöp kutusu işlemleri (Kanban trash kolonu)
+// Silinen görevleri trash kolonunda göster, geri yükle veya kalıcı sil
+const trashList = document.getElementById('taskList-0');
+const countTrash = document.getElementById('count-0');
 
-// Çöp kutusundan silinen tüm görevleri yükle ve göster
+// Çöp kutusundan silinen tüm görevleri yükle ve trash kolonuna render et
 async function loadTrash(){
   if(!trashList) return;
-  const res = await fetch('crud.php?action=trash_list');
+  const res = await fetch('crud.php?action=list');
   const data = await res.json();
   if(!data.ok){
     showToast(data.message || 'Çöp kutusu yüklenemedi', 'error');
     return;
   }
   trashList.innerHTML = '';
-  data.items.forEach(item => {
+  // Sadece status=0 olanları al
+  const trashTasks = data.tasks.filter(t => t.status === 0);
+  trashTasks.forEach(item => {
     const li = document.createElement('li');
+    li.draggable = true;
     li.dataset.id = item.id;
+    li.dataset.status = '0';
     const img = item.image_path ? `<img src="${escapeHtml(item.image_path)}" class="thumb" alt="">` : '';
     li.innerHTML = `
       <div class="left">
@@ -25,69 +27,140 @@ async function loadTrash(){
         ${img}
       </div>
       <div class="actions">
-        <button class="restore-btn" data-id="${item.id}">Geri Al</button>
-        <button class="trash-delete-btn" data-id="${item.id}">Sil</button>
+        <button class="trash-delete-btn" data-id="${item.id}" title="Kalıcı Sil">🗑️</button>
       </div>
     `;
     trashList.appendChild(li);
   });
-}
-
-// Çöp kutusu görünürlüğünü aç/kapat butonu
-if(toggleTrashBtn){
-  toggleTrashBtn.addEventListener('click', async ()=>{
-    const visible = trashBox.style.display !== 'none';
-    trashBox.style.display = visible ? 'none' : 'block';
-    if(!visible) await loadTrash();
-  });
-}
-
-// Çöp kutusunu tamamen boşalt: trash_empty API'sini çağır
-if(emptyTrashBtn){
-  emptyTrashBtn.addEventListener('click', async ()=>{
-    if(!confirm('Çöp tamamen boşaltılsın mı?')) return;
-    const res = await fetch('crud.php?action=trash_empty', {method:'POST'});
-    const data = await res.json();
-    if(!data.ok){
-      showToast(data.message || 'Boşaltılamadı', 'error');
-      return;
-    }
-    showToast('Çöp kutusu boşaltıldı', 'success');
-    trashList.innerHTML='';
-  });
+  
+  // Trash kolonundaki görev sayısını güncelle
+  if(countTrash) countTrash.textContent = trashTasks.length;
+  
+  // Drag-drop özelliklerini yeniden etkinleştir
+  if(typeof enableDragAndDrop === 'function') enableDragAndDrop();
 }
 
 // Çöpten görev geri yükle: trash_restore API'sini çağır
-// Geri yüklenen görev aktif listeye döner
-document.addEventListener('click', async (e)=>{
-  if(!e.target.classList.contains('restore-btn')) return;
-  const id = e.target.dataset.id;
-  const fd = new FormData();
-  fd.append('id', id);
-  const res = await fetch('crud.php?action=trash_restore', {method:'POST', body: fd});
-  const data = await res.json();
-  if(!data.ok){
-    showToast(data.message || 'Geri alma başarısız', 'error');
+// Çöp kutusundan bir görevi başka kolona sürükleyince restore edilir
+let dragStartStatus = null;
+
+document.addEventListener('dragstart', (e) => {
+  const li = e.target;
+  if (li.dataset && li.dataset.status) {
+    dragStartStatus = li.dataset.status;
+  }
+});
+
+document.addEventListener('dragend', async (e) => {
+  const li = e.target;
+  
+  // Sadece trash kolonundan başlayan sürüklemeleri işle
+  if (dragStartStatus !== '0') {
+    dragStartStatus = null;
     return;
   }
-  showToast('Görev geri alındı', 'success');
+  
+  dragStartStatus = null;
+  
+  // Eğer trash kolonundan başka bir kolona sürüklendiyse
+  const newColumn = li.closest('.kanban-column');
+  if (!newColumn || newColumn.dataset.status === '0') return;
+  
+  // Status güncelle (0'dan başka bir duruma geçiş)
+  const id = li.dataset.id;
+  const newStatus = newColumn.dataset.status;
+  const fd = new FormData();
+  fd.append('id', id);
+  fd.append('status', newStatus);
+  
+  const res = await fetch('crud.php?action=update_status', {method:'POST', body: fd});
+  const data = await res.json();
+  
+  if(!data.ok){
+    showToast(data2.message || 'Status güncellenemedi', 'error');
+  } else {
+    showToast('Görev geri alındı', 'success');
+  }
+  
   await loadTasks();
   await loadTrash();
 });
 
-// Trash delete handler
+// Çöp kutusunu tamamen boşalt butonu
+const emptyTrashBtn = document.getElementById('emptyTrashBtn');
+if(emptyTrashBtn){
+  emptyTrashBtn.addEventListener('click', ()=>{
+    const trashCount = trashList.children.length;
+    if(trashCount === 0) {
+      showToast('Çöp kutusu zaten boş', 'info');
+      return;
+    }
+    showEmptyTrashModal(trashCount);
+  });
+}
+
+// Çöp kutusu boşaltma modal'ı
+function showEmptyTrashModal(count) {
+  const modal = document.createElement('div');
+  modal.className = 'modal show';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>Çöp Kutusunu Boşalt</h3>
+      <p>${count} görev kalıcı olarak silinecek. Onaylıyor musunuz?</p>
+      <div class="modal-buttons">
+        <button class="btn-confirm" id="confirmEmptyTrash">Evet, Boşalt</button>
+        <button class="btn-cancel" id="cancelEmptyTrash">İptal</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Event listeners
+  const confirmBtn = document.getElementById('confirmEmptyTrash');
+  const cancelBtn = document.getElementById('cancelEmptyTrash');
+  
+  confirmBtn.addEventListener('click', async () => {
+    modal.remove();
+    // Tüm status=0 görevleri kalıcı silinenlere (status=4) taşı
+    const allTrashItems = Array.from(trashList.children);
+    let successCount = 0;
+    
+    for(const li of allTrashItems) {
+      const fd = new FormData();
+      fd.append('id', li.dataset.id);
+      const res = await fetch('crud.php?action=permanent_delete', {method:'POST', body: fd});
+      const data = await res.json();
+      if(data.ok) successCount++;
+    }
+    
+    if(successCount === allTrashItems.length) {
+      showToast('Çöp kutusu boşaltıldı', 'success');
+    } else {
+      showToast(`${successCount}/${allTrashItems.length} görev taşındı`, 'warning');
+    }
+    await loadTrash();
+  });
+  
+  cancelBtn.addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
+// Çöp kutusundan kalıcı silme butonu
 document.addEventListener('click', async (e)=>{
   if(!e.target.classList.contains('trash-delete-btn')) return;
   const id = e.target.dataset.id;
-  if(!confirm('Kalıcı olarak silinsin mi?')) return;
+  if(!confirm('Bu görev kalıcı silinenlere taşınacak. Onaylıyor musunuz?')) return;
+  
   const fd = new FormData();
   fd.append('id', id);
-  const res = await fetch('crud.php?action=trash_delete', {method:'POST', body: fd});
+  const res = await fetch('crud.php?action=permanent_delete', {method:'POST', body: fd});
   const data = await res.json();
   if(!data.ok){
-    showToast(data.message || 'Silinemedi', 'error');
+    showToast(data.message || 'Taşınamadı', 'error');
     return;
   }
-  showToast('Kalıcı olarak silindi', 'success');
+  showToast('Görev kalıcı silinenlere taşındı', 'success');
   await loadTrash();
 });

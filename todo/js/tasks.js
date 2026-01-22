@@ -1,7 +1,11 @@
-// tasks.js - Task CRUD işlemleri
+// tasks.js - Task CRUD işlemleri (Kanban 3 Sütun)
 
 // HTML elemanlara erişim
-const taskList = document.getElementById("taskList");
+const taskLists = {
+  1: document.getElementById("taskList-1"),
+  2: document.getElementById("taskList-2"),
+  3: document.getElementById("taskList-3")
+};
 const addForm = document.getElementById("addForm");
 const titleInput = document.getElementById("titleInput");
 
@@ -16,23 +20,21 @@ function escapeHtml(s) {
   }[m]));
 }
 
-// Bir task için list item HTML'i oluştur - görev başlığı, resim, durum butonu
-// Tamamlananlar sürüklenemez (draggable false olur)
+// Bir task için list item HTML'i oluştur
 function renderTask(t) {
   const li = document.createElement("li");
   li.dataset.id = t.id;
-  li.draggable = (t.is_done == 0);
+  li.dataset.status = t.status || 1;
+  li.draggable = true;
 
   const imgHtml = (t.image_path && t.image_path.trim() !== "")
     ? `<img src="${escapeHtml(t.image_path)}" class="thumb" alt="">`
     : "";
 
-  const isDone = Number(t.is_done) === 1;
-  const statusBtn = `<button class="status-btn ${isDone ? 'btn-done' : 'btn-open'}" data-id="${t.id}" data-done="${isDone ? 1 : 0}" type="button">${isDone ? 'Tamamlandı' : 'Tamamlanmamış'}</button>`;
+  // Sadece görsel yükleme butonu, sil butonu kaldırıldı (çöp kutusuna sürükle)
   li.innerHTML = `
     <div class="left">
-      ${statusBtn}
-      <span class="task-title ${isDone ? "task-done" : ""}">${escapeHtml(t.title)}</span>
+      <span class="task-title">${escapeHtml(t.title)}</span>
       ${imgHtml}
     </div>
 
@@ -46,8 +48,16 @@ function renderTask(t) {
   return li;
 }
 
+// Task count güncelle (çöp dahil)
+function updateCounts() {
+  [1, 2, 3].forEach(status => {
+    const count = taskLists[status].children.length;
+    document.getElementById(`count-${status}`).textContent = count;
+  });
+  // Çöp kutusu sayacı ayrı yönetilecek (trash.js tarafından)
+}
+
 // Tüm taskları API'den getir ve sayfada göster
-// Sürükleme-bırakma özelliğini de etkinleştir
 async function loadTasks() {
   const res = await fetch("crud.php?action=list");
   const data = await res.json();
@@ -57,15 +67,26 @@ async function loadTasks() {
     return;
   }
 
-  taskList.innerHTML = "";
-  data.tasks.forEach(t => taskList.appendChild(renderTask(t)));
+  // Tüm sütunları temizle
+  Object.values(taskLists).forEach(list => list.innerHTML = "");
 
-  // Sürükleme-bırakma işlevini etkinleştir
+  // Her task'i status'üne göre ilgili sütuna ekle
+  data.tasks.forEach(t => {
+    const status = t.status || 1; // Updated to default to 1 instead of 0
+      // Status 0 olanları atla (çöp kutusu trash.js tarafından yönetilir)
+    // Status 4 olanları atla (kalıcı silinenler admin panelinde)
+    if (status === 0 || status === 4) return;
+    const targetList = taskLists[status];
+    if (targetList) {
+      targetList.appendChild(renderTask(t));
+    }
+  });
+
+  updateCounts();
   enableDragAndDrop();
 }
 
 // Yeni task ekle: form gönderildiğinde API'ye istek yap ve listeyi yenile
-// Boş görev veya whitespace-only görevler gönderilmez
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = titleInput.value.trim();
@@ -83,62 +104,3 @@ addForm.addEventListener("submit", async (e) => {
   await loadTasks();
 });
 
-// Durum butonuna basarak tamamla/aç işlemi: optimistic update + sunucu onayı
-// UI hemen güncellenecek, sunucu hatası varsa geri alınacak
-// Tamamlanan görevler sonda, tamamlanmayan görevler üstte konumlandırılır
-taskList.addEventListener("click", async (e) => {
-  const statusBtn = e.target.closest(".status-btn");
-  if (!statusBtn) return;
-  const li = statusBtn.closest("li");
-  if (!li) return;
-
-  const titleEl = li.querySelector(".task-title");
-  const currentlyDone = statusBtn.dataset.done === '1';
-  const willBeDone = currentlyDone ? 0 : 1;
-
-  // UI ön güncelleme (optimistic update) - sunucuyu beklemeden doğru göster
-  titleEl.classList.toggle("task-done", willBeDone === 1);
-  li.draggable = (willBeDone === 0);
-  statusBtn.dataset.done = String(willBeDone);
-  statusBtn.textContent = willBeDone === 1 ? "Tamamlandı" : "Tamamlanmamış";
-  statusBtn.classList.toggle('btn-done', willBeDone === 1);
-  statusBtn.classList.toggle('btn-open', willBeDone === 0);
-
-  const fd = new FormData();
-  fd.append("id", li.dataset.id);
-  fd.append("is_done", willBeDone);
-
-  const res = await fetch("crud.php?action=toggle", { method: "POST", body: fd });
-  const data = await res.json();
-
-  if (!data.ok) {
-    // Geri al
-    titleEl.classList.toggle("task-done", currentlyDone);
-    li.draggable = (currentlyDone ? false : true);
-    statusBtn.dataset.done = String(currentlyDone ? 1 : 0);
-    statusBtn.textContent = currentlyDone ? "Tamamlandı" : "Tamamlanmamış";
-    statusBtn.classList.toggle('btn-done', currentlyDone);
-    statusBtn.classList.toggle('btn-open', !currentlyDone);
-    showToast(data.message || "Güncelleme basarisiz", "error");
-    return;
-  }
-
-  // Tamamlananları aşağıya al, tamamlanmamışları üstte tut
-  // Sıralama kuralı: Tamamlanmış görevler en sonda, tamamlanmamış görevler başında
-  if (willBeDone === 1) {
-    // Tamamlandı: en sona taşı
-    taskList.appendChild(li);
-  } else {
-    // Tamamlanmamış: ilk tamamlanmış görevin öncesine ekle (tamamlanmamışların en altına)
-    const firstDone = [...taskList.children].find(child => {
-      return child.querySelector(".task-title").classList.contains("task-done");
-    });
-    if (firstDone) {
-      taskList.insertBefore(li, firstDone);
-    } else {
-      // Hiç tamamlanmış görev yoksa, en sona ekle
-      taskList.appendChild(li);
-    }
-  }
-  enableDragAndDrop();
-});

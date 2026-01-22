@@ -1,5 +1,5 @@
 <?php
-// api/delete.php - Task sil (status=0 yap - kullanıcı çöp kutusu)
+// api/permanent_delete.php - Görevi kalıcı silinenler listesine işaretle (status=4)
 require_once __DIR__ . '/../auth.php';
 
 $id = (int)($_POST["id"] ?? 0);
@@ -13,13 +13,13 @@ if ((int)$CURRENT_USER_ROLE === 2 && $requestedUserId > 0) {
 }
 
 // Task'ı al (sadece hedef kullanıcının taski)
-$stmt = $pdo->prepare("SELECT id, title, image_path, user_id FROM tasks WHERE id = :id AND user_id = :user_id");
+$stmt = $pdo->prepare("SELECT id FROM tasks WHERE id = :id AND user_id = :user_id");
 $stmt->execute(["id" => $id, "user_id" => $targetUserId]);
 $task = $stmt->fetch();
 if (!$task) error("Görev bulunamadı veya yetkiniz yok");
 
-// Status'ü 0 yap (kullanıcı çöp kutusu)
-$stmtUpdate = $pdo->prepare("UPDATE tasks SET status = 0 WHERE id = :id");
+// Status'ü 4 yap (kalıcı silinenler - admin görünümü)
+$stmtUpdate = $pdo->prepare("UPDATE tasks SET status = 4 WHERE id = :id");
 $stmtUpdate->execute(["id" => $id]);
 
-success(["id" => $id, "user_id" => $task["user_id"]]);
+success(["id" => $id, "message" => "Görev kalıcı silinenlere taşındı"]);

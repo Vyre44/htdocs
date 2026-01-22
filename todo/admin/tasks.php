@@ -37,7 +37,7 @@ require_once 'admin_auth.php';
                 </li>
                 <li class="nav-item" role="presentation">
                   <button class="nav-link" id="trash-tab" data-bs-toggle="tab" data-bs-target="#trash" type="button" role="tab">
-                    <i class="fa-solid fa-trash"></i> Çöp Kutusu
+                    <i class="fa-solid fa-trash"></i> Kalıcı Silinenler
                     <span class="badge bg-danger ms-1" id="trashCount">0</span>
                   </button>
                 </li>

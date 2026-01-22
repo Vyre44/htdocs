@@ -109,7 +109,11 @@ async function fetchTasks(userId) {
     const res = await fetch('../crud.php?action=admin_user_tasks', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Görevler alınamadı');
-    renderTasks(data.tasks || []);
+    const allTasks = data.tasks || [];
+    const activeTasks = allTasks.filter(t => Number(t.status) !== 4); // 0,1,2,3 göster; 4 kalıcı silinenler
+    trashData = allTasks.filter(t => Number(t.status) === 4);
+    renderTasks(activeTasks);
+    renderTrash();
   } catch (err) {
     console.error(err);
     showToast(err.message, 'error');
@@ -124,22 +128,32 @@ function renderTasks(tasks) {
 
   tasks.forEach((t) => {
     const tr = document.createElement('tr');
-    const isDone = Number(t.is_done) === 1;
-    const status = isDone
-      ? '<span class="badge bg-success">Tamamlandı</span>'
-      : '<span class="badge bg-danger">Tamamlanmadı</span>';
+    const statusVal = Number(t.status ?? 0);
+    const badges = {
+      0: '<span class="badge bg-danger">Çöp Kutusunda</span>',
+      1: '<span class="badge bg-primary">Başlanmadı</span>',
+      2: '<span class="badge bg-warning text-dark">Devam Ediyor</span>',
+      3: '<span class="badge bg-success">Tamamlandı</span>',
+      4: '<span class="badge bg-danger">Kalıcı Silinen</span>'
+    };
+
+    const select = `
+      <select class="form-select form-select-sm admin-status" data-id="${t.id}" style="min-width: 160px; padding: 0.25rem 0.5rem; font-size: 0.875rem;">
+        <option value="0" ${statusVal===0?'selected':''}>Çöp Kutusunda</option>
+        <option value="1" ${statusVal===1?'selected':''}>Başlanmadı</option>
+        <option value="2" ${statusVal===2?'selected':''}>Devam Ediyor</option>
+        <option value="3" ${statusVal===3?'selected':''}>Tamamlandı</option>
+      </select>`;
+
     tr.innerHTML = `
       <td>${t.id}</td>
+      <td>${escapeHtml(t.title)}</td>
       <td>
-        <span class="${isDone ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(t.title)}</span>
+        <div class="d-flex align-items-center gap-2">${badges[statusVal] || badges[1]}${select}</div>
       </td>
-      <td>${status}</td>
       <td>${t.created_at ?? ''}</td>
       <td>
         <div class="d-flex gap-2">
-          <button class="btn btn-sm ${isDone ? 'btn-outline-secondary' : 'btn-outline-success'}" data-action="toggle" data-id="${t.id}" data-done="${t.is_done}">
-            ${isDone ? 'Aç' : 'Tamamla'}
-          </button>
           <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${t.id}">Sil</button>
         </div>
       </td>
@@ -147,12 +161,32 @@ function renderTasks(tasks) {
     tbody.appendChild(tr);
   });
 
-  // Toggle / delete eventleri
-  tbody.querySelectorAll('button[data-action="toggle"]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = Number(btn.dataset.id);
-      const current = Number(btn.dataset.done) === 1 ? 1 : 0;
-      adminToggleTask(id, current === 1 ? 0 : 1);
+  // Status select değişimi (optimistic update)
+  tbody.querySelectorAll('select.admin-status').forEach((sel) => {
+    sel.addEventListener('change', async () => {
+      const id = Number(sel.dataset.id);
+      const prevVal = Number(sel.dataset.prev || sel.value);
+      const val = Number(sel.value);
+      const tr = sel.closest('tr');
+      const badgeContainer = tr.querySelector('td:nth-child(3) > div');
+
+      const badges = {
+        0: '<span class="badge bg-danger">Çöp Kutusunda</span>',
+        1: '<span class="badge bg-primary">Başlanmadı</span>',
+        2: '<span class="badge bg-warning text-dark">Devam Ediyor</span>',
+        3: '<span class="badge bg-success">Tamamlandı</span>',
+        4: '<span class="badge bg-danger">Kalıcı Silinen</span>'
+      };
+
+      // Optimistik rozet
+      if (badgeContainer) {
+        badgeContainer.innerHTML = badges[val] + badgeContainer.innerHTML.substring(badgeContainer.innerHTML.indexOf('<select'));
+      }
+
+      // API sonucu başarısız olursa geri dönebilmek için önceki değeri sakla
+      sel.dataset.prev = prevVal;
+
+      await adminUpdateStatus(id, val, sel);
     });
   });
   tbody.querySelectorAll('button[data-action="delete"]').forEach((btn) => {
@@ -178,8 +212,8 @@ async function adminAddTask() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Görev eklenemedi');
     newTaskTitle.value = '';
+    // Seçili kullanıcıda kal; sadece görevleri tazele
     await fetchTasks(selectedUserId);
-    await fetchUsers();
     showToast('Görev eklendi', 'success');
   } catch (err) {
     console.error(err);
@@ -187,22 +221,35 @@ async function adminAddTask() {
   }
 }
 
-// Admin: görevin tamamlanma durumunu değiştir (aç/kapat)
-async function adminToggleTask(taskId, isDone) {
+// Admin: görevin status'unu güncelle (0/1/2) - error ise tabloyu yenile
+async function adminUpdateStatus(taskId, status, selectEl) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
   fd.append('id', taskId);
-  fd.append('is_done', isDone);
+  fd.append('status', status);
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('../crud.php?action=toggle', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=update_status', { method: 'POST', body: fd });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || 'Güncelleme başarısız');
-    await fetchTasks(selectedUserId);
+    if (!data.ok) {
+      showToast(data.message || 'Güncelleme başarısız', 'error');
+      if (selectEl && selectEl.dataset.prev !== undefined) {
+        selectEl.value = selectEl.dataset.prev;
+      }
+      await fetchTasks(selectedUserId);
+    } else {
+      showToast('Durum güncellendi', 'success');
+      // Sunucudan gelen güncel veriyle senkronize ol
+      await fetchTasks(selectedUserId);
+    }
   } catch (err) {
     console.error(err);
-    showToast(err.message, 'error');
+    showToast('Güncelleme hatası', 'error');
+    if (selectEl && selectEl.dataset.prev !== undefined) {
+      selectEl.value = selectEl.dataset.prev;
+    }
+    await fetchTasks(selectedUserId);
   }
 }
 
@@ -211,16 +258,15 @@ async function adminDeleteTask(taskId) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
   fd.append('id', taskId);
+  fd.append('status', 4);
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('../crud.php?action=delete', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=update_status', { method: 'POST', body: fd  });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Silme başarısız');
     await fetchTasks(selectedUserId);
-    await fetchTrash(selectedUserId);
-    await fetchUsers();
-    showToast('Görev çöp kutusuna taşındı', 'success');
+    showToast('Görev silinenlere taşındı', 'success');
   } catch (err) {
     console.error(err);
     showToast(err.message, 'error');
@@ -232,18 +278,7 @@ async function fetchTrash(userId) {
   if (!userId) userId = selectedUserId;
   if (!userId) return;
 
-  try {
-    const fd = new FormData();
-    fd.append('user_id', userId);
-    const res = await fetch('../crud.php?action=trash_list', { method: 'POST', body: fd });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.message || 'Çöp kutusu alınamadı');
-    trashData = data.items || [];
-    renderTrash();
-  } catch (err) {
-    console.error(err);
-    showToast(err.message, 'error');
-  }
+  // Artık trashData fetchTasks içinde dolduruluyor
 }
 
 // Çöp kutusu tablosunu HTML ile oluştur, geri yükleme/kalıcı silme butonları ekle
@@ -305,15 +340,14 @@ async function adminRestoreTask(trashId) {
   if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
   const fd = new FormData();
   fd.append('id', trashId);
+  fd.append('status', 1); // varsayılan: Başlanmadı
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('../crud.php?action=trash_restore', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=update_status', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Geri yükleme başarısız');
     await fetchTasks(selectedUserId);
-    await fetchTrash(selectedUserId);
-    await fetchUsers();
     showToast('Görev geri yüklendi', 'success');
   } catch (err) {
     console.error(err);
@@ -329,10 +363,10 @@ async function adminPermanentDeleteTask(trashId) {
   fd.append('user_id', selectedUserId);
 
   try {
-    const res = await fetch('../crud.php?action=trash_delete', { method: 'POST', body: fd });
+    const res = await fetch('../crud.php?action=permanent_delete', { method: 'POST', body: fd });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || 'Kalıcı silme başarısız');
-    await fetchTrash(selectedUserId);
+    await fetchTasks(selectedUserId);
     showToast('Görev kalıcı olarak silindi', 'success');
   } catch (err) {
     console.error(err);
@@ -374,16 +408,20 @@ window.addEventListener('DOMContentLoaded', () => {
   if (emptyTrashBtn) {
     emptyTrashBtn.addEventListener('click', async () => {
       if (!selectedUserId) return showToast('Kullanıcı seçili değil', 'error');
-      if (!confirm('Tüm çöp kutusu temizlenecek. Emin misiniz?')) return;
+      if (!confirm('Tüm silinen görevler kalıcı olarak silinecek. Emin misiniz?')) return;
 
       try {
-        const fd = new FormData();
-        fd.append('user_id', selectedUserId);
-        const res = await fetch('../crud.php?action=trash_empty', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.message || 'Çöp kutusu boşaltılamadı');
-        await fetchTrash(selectedUserId);
-        showToast('Çöp kutusu boşaltıldı', 'success');
+        let success = 0;
+        for (const item of trashData) {
+          const fd = new FormData();
+          fd.append('id', item.id);
+          fd.append('user_id', selectedUserId);
+          const res = await fetch('../crud.php?action=permanent_delete', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.ok) success++;
+        }
+        await fetchTasks(selectedUserId);
+        showToast(`Silinen görevler temizlendi (${success}/${trashData.length})`, 'success');
       } catch (err) {
         console.error(err);
         showToast(err.message, 'error');
@@ -395,7 +433,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const trashTab = document.getElementById('trash-tab');
   if (trashTab) {
     trashTab.addEventListener('shown.bs.tab', () => {
-      if (selectedUserId) fetchTrash(selectedUserId);
+      if (selectedUserId) fetchTasks(selectedUserId);
     });
   }
 });

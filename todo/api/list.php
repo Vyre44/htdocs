@@ -7,7 +7,7 @@ $stmt = $pdo->prepare("
   SELECT * 
   FROM tasks 
   WHERE user_id = :user_id
-  ORDER BY is_done ASC, sort_order ASC, id DESC
+  ORDER BY status ASC, sort_order ASC, id DESC
 ");
 $stmt->execute(['user_id' => $CURRENT_USER_ID]);
 $tasks = $stmt->fetchAll();
