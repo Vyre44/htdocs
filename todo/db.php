@@ -1,9 +1,9 @@
 <?php
 // Veritabanı bağlantısı
-$host = "localhost";
+$host = "db"; // Docker service name
 $db = "todo_app";
-$user = "root";
-$password = "";
+$user = "todo";
+$password = "todo";
 
 try {
     $pdo = new PDO(
@@ -19,4 +19,3 @@ try {
 } catch (PDOException $e) {
     die("Veritabanı bağlantı hatası: " . $e->getMessage());
 };
-?>  

@@ -151,16 +151,47 @@ function showEmptyTrashModal(count) {
 document.addEventListener('click', async (e)=>{
   if(!e.target.classList.contains('trash-delete-btn')) return;
   const id = e.target.dataset.id;
-  if(!confirm('Bu görev kalıcı silinenlere taşınacak. Onaylıyor musunuz?')) return;
   
-  const fd = new FormData();
-  fd.append('id', id);
-  const res = await fetch('crud.php?action=permanent_delete', {method:'POST', body: fd});
-  const data = await res.json();
-  if(!data.ok){
-    showToast(data.message || 'Taşınamadı', 'error');
-    return;
-  }
-  showToast('Görev kalıcı silinenlere taşındı', 'success');
-  await loadTrash();
+  // Modal onay göster
+  const modal = document.createElement('div');
+  modal.className = 'modal show';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>Kalıcı Sil</h3>
+      <p>Bu görev kalıcı silinenlere taşınacak. Onaylıyor musunuz?</p>
+      <div class="modal-buttons">
+        <button class="btn-confirm" id="confirmTrashDelete">Evet, Taşı</button>
+        <button class="btn-cancel" id="cancelTrashDelete">İptal</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const confirmBtn = document.getElementById('confirmTrashDelete');
+  const cancelBtn = document.getElementById('cancelTrashDelete');
+  
+  confirmBtn.addEventListener('click', async () => {
+    modal.remove();
+    
+    const fd = new FormData();
+    fd.append('id', id);
+    const res = await fetch('crud.php?action=permanent_delete', {method:'POST', body: fd});
+    const data = await res.json();
+    if(!data.ok){
+      showToast(data.message || 'Taşınamadı', 'error');
+      return;
+    }
+    showToast('Görev kalıcı silinenlere taşındı', 'success');
+    await loadTrash();
+  });
+  
+  cancelBtn.addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+});
+
+// Sayfa yüklendiğinde çöp kutusunu getir
+document.addEventListener("DOMContentLoaded", () => {
+  loadTrash();
 });

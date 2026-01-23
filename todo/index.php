@@ -70,6 +70,5 @@
   <script src="js/bulk.js"></script>
   <script src="js/trash.js"></script>
   <script src="js/logout.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>

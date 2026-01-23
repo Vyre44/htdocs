@@ -104,3 +104,7 @@ addForm.addEventListener("submit", async (e) => {
   await loadTasks();
 });
 
+// Sayfa yüklendiğinde task listesini getir
+document.addEventListener("DOMContentLoaded", () => {
+  loadTasks();
+});

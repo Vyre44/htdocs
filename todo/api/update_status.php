@@ -1,4 +1,4 @@
-  <?php
+<?php
 // api/update_status.php - Task status güncelleme
 require_once __DIR__ . '/../auth.php';
 

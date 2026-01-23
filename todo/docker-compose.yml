@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+  # MySQL DB
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: todo_app
+      MYSQL_USER: todo
+      MYSQL_PASSWORD: todo
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # phpmyadmin user todo şifre todo
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: todo
+      PMA_PASSWORD: todo
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      - db
+volumes:
+  db_data:
